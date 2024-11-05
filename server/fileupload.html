@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload and Ask</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        form { margin-bottom: 20px; }
+        input[type="file"], input[type="text"] { margin-bottom: 10px; }
+        #response { border: 1px solid #ccc; padding: 10px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Upload and Ask</h1>
+    
+    <form id="uploadForm">
+        <label for="file">Choose an image:</label>
+        <input type="file" id="file" name="file" accept="image/*" required>
+        <br>
+        <label for="question">Ask question:</label>
+        <input type="text" id="question" name="text" required>
+        <br>
+        <button type="submit">Submit</button>
+    </form>
+
+    <div id="response" style="display: none;">
+        <h2>Response</h2>
+        <p id="responseText"></p>
+        <audio id="audioPlayer" controls style="display: none;"></audio>
+    </div>
+
+    <form id="followUpForm" style="display: none;">
+        <label for="followUpQuestion">Ask follow-up question:</label>
+        <input type="text" id="followUpQuestion" name="text" required>
+        <br>
+        <button type="submit">Submit Follow-up</button>
+    </form>
+
+    <script>
+        const uploadForm = document.getElementById('uploadForm');
+        const followUpForm = document.getElementById('followUpForm');
+        const responseDiv = document.getElementById('response');
+        const responseText = document.getElementById('responseText');
+        const audioPlayer = document.getElementById('audioPlayer');
+
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(uploadForm);
+            try {
+                const response = await axios.post('http://127.0.0.1:5000/ask', formData);
+                displayResponse(response.data);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while processing your request.');
+            }
+        });
+
+        followUpForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(followUpForm);
+            try {
+                const response = await axios.post('http://127.0.0.1:5000/follow-up', formData);
+                displayResponse(response.data);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while processing your follow-up question.');
+            }
+        });
+
+        function displayResponse(data) {
+            responseText.textContent = data.final_response;
+            if (data.audio) {
+                audioPlayer.src = data.audio;
+                audioPlayer.style.display = 'block';
+            } else {
+                audioPlayer.style.display = 'none';
+            }
+            responseDiv.style.display = 'block';
+            followUpForm.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

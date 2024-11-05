@@ -1,0 +1,73 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # Your main application
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"  # Your app's port
+    volumes:
+      - ./app:/app
+      - model-data:/app/models
+    environment:
+      - OLLAMA_HOST=ollama
+      - OLLAMA_PORT=11434
+    depends_on:
+      - ollama
+      - alltalk
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    networks:
+      - ml_network
+
+  # Ollama service
+  ollama:
+    image: ollama/ollama
+    volumes:
+      - ollama-data:/root/.ollama
+    ports:
+      - "11434:11434"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    networks:
+      - ml_network
+
+  # AllTalk TTS service
+  alltalk-tts:
+    image: erew123/alltalk_tts:cuda
+    restart: unless-stopped
+    ports:
+      - "7851:7851"
+    volumes:
+      - ./outputs:/app/outputs/
+      - ./models:/app/models/
+      - ./voices:/app/voices/
+      - ./finetune/put-voice-samples-in-here:/app/finetune/put-voice-samples-in-here
+      - ./dockerconfig.json:/app/confignew.json
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
+    networks:
+      - ml_network
+
+networks:
+  ml_network:
+    driver: bridge
+
+volumes:
+  model-data:
+  ollama-data:
+  alltalk-models:
