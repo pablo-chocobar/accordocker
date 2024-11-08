@@ -49,7 +49,7 @@
             e.preventDefault();
             const formData = new FormData(uploadForm);
             try {
-                const response = await axios.post('http://127.0.0.1:5000/ask', formData);
+                const response = await axios.post('https://mkskdml6hej9xv-5000.proxy.runpod.net/ask', formData, { responseType: 'blob' });
                 displayResponse(response.data);
             } catch (error) {
                 console.error('Error:', error);
@@ -61,7 +61,7 @@
             e.preventDefault();
             const formData = new FormData(followUpForm);
             try {
-                const response = await axios.post('http://127.0.0.1:5000/follow-up', formData);
+                const response = await axios.post('https://mkskdml6hej9xv-5000.proxy.runpod.net/follow-up', formData, { responseType: 'blob' });
                 displayResponse(response.data);
             } catch (error) {
                 console.error('Error:', error);
@@ -69,14 +69,15 @@
             }
         });
 
-        function displayResponse(data) {
-            responseText.textContent = data.final_response;
-            if (data.audio) {
-                audioPlayer.src = data.audio;
-                audioPlayer.style.display = 'block';
-            } else {
-                audioPlayer.style.display = 'none';
-            }
+        function displayResponse(dataBlob) {
+            responseText.textContent = 'Here is the response:';
+
+            // Create a Blob URL for the audio data and play it
+            const audioURL = URL.createObjectURL(dataBlob);
+            audioPlayer.src = audioURL;
+            audioPlayer.style.display = 'block';
+            audioPlayer.play();
+
             responseDiv.style.display = 'block';
             followUpForm.style.display = 'block';
         }

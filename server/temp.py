@@ -13,8 +13,7 @@ CORS(app)
 chat_memory = ChatMemory()
 locallama = "llama3.1"
 
-from ollama import Client
-client = Client(host='http://ollama:11434')
+import ollama
 
 @app.route('/ask', methods=['POST'])
 def submit():
@@ -63,7 +62,7 @@ Provide a single paragraph response (roughly 3-5 sentences) that covers the main
 3. Weather conditions or other relevant atmospheric details
 Start with a specific detail from the scene rather than a general overview.'''
 
-    response = client.chat(model=locallama, messages=[
+    response = ollama.chat(model=locallama, messages=[
         {
             'role': 'system',
             'content': system_prompt
@@ -93,7 +92,7 @@ def follow_up():
     history_context = "\n".join([f"User: {conv['user']}\nSystem: {conv['system']}" for conv in history])
     print("Follow-up history context:", history_context)  # Debug print
 
-    response = client.chat(model=locallama, messages=[
+    response = ollama.chat(model=locallama, messages=[
         {
             'role': 'system',
             'content': f'''
