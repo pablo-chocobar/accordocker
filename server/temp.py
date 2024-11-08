@@ -1,8 +1,7 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
-from utils import text_to_speech, parse_and_process_image, main_workflow
+from actualutils import parse_and_process_image, main_workflow , generate_speech
 import warnings
-import requests
 from chat_memory import ChatMemory
 
 warnings.filterwarnings("ignore")
@@ -22,7 +21,6 @@ client = Client(host='http://ollama:11434')
 def submit():
     image_desc = None
 
-    # Handle image upload
     if 'file' in request.files:
         file = request.files['file']
         if file.filename == '':
@@ -30,13 +28,6 @@ def submit():
             
         if file and file.filename.lower().endswith(('.png', '.jpg', '.jpeg')):
             try:
-                # url = 'http://192.168.0.129:5000/describe'
-                # file_content = file.read()
-                # files = {'image': (file.filename, file_content, file.content_type)}
-                # response = requests.post(url, files=files)
-                # response_data = response.json()
-                # image_desc = response_data.get("final response", "No response found")
-                # print("Image description:", image_desc)
                 image = parse_and_process_image(file)
                 image_desc = main_workflow(image)
             except Exception as e:
@@ -49,19 +40,16 @@ def submit():
     if not question:
         return jsonify({'error': 'No question provided'}), 400
 
-    # Get conversation history
     history = chat_memory.get_history()
     history_context = "\n".join([f"User: {conv['user']}\nSystem: {conv['system']}" for conv in history])
     print("Current history context:", history_context)  # Debug print
 
-    # If there's a new image, add it to the conversation first
     if image_desc:
         chat_memory.add_conversation("describe what's in the image", image_desc)
         # Update history context with the new image description
         history = chat_memory.get_history()
         history_context = "\n".join([f"User: {conv['user']}\nSystem: {conv['system']}" for conv in history])
 
-    # Prepare system prompt
     system_prompt = f'''
 You are an AI assistant describing scenes to a visually impaired person based on image analysis. Your responses should be concise yet thorough, covering all key details provided in the image description. Avoid unnecessary elaboration or assumptions beyond what's explicitly stated. Use clear, descriptive language that helps create a mental image of the scene. Do not use phrases like "You are standing" or assume the person's position. Instead, describe the scene objectively.
 
@@ -76,7 +64,6 @@ Provide a single paragraph response (roughly 3-5 sentences) that covers the main
 3. Weather conditions or other relevant atmospheric details
 Start with a specific detail from the scene rather than a general overview.'''
 
-    # Get response from Llama
     response = client.chat(model=locallama, messages=[
         {
             'role': 'system',
@@ -91,17 +78,10 @@ Start with a specific detail from the scene rather than a general overview.'''
     ans = response['message']['content']
     print("Model response:", ans)  # Debug print
 
-    # Add the new conversation to memory
     chat_memory.add_conversation(question, ans)
 
-    # Generate text-to-speech
-    tts_response = text_to_speech(ans)
-
-    return jsonify({
-        'question_message': f"You asked: {question}",
-        "final_response": ans,
-        "audio": tts_response["output_file_url"]
-    }), 200
+    tts_response = generate_speech(ans)
+    return send_file(tts_response, as_attachment=False)
 
 @app.route('/follow-up', methods=['POST'])
 def follow_up():
@@ -110,12 +90,10 @@ def follow_up():
     if not follow_up_question:
         return jsonify({'error': 'No follow-up question provided'}), 400
 
-    # Get conversation history
     history = chat_memory.get_history()
     history_context = "\n".join([f"User: {conv['user']}\nSystem: {conv['system']}" for conv in history])
     print("Follow-up history context:", history_context)  # Debug print
 
-    # Get response from Llama
     response = client.chat(model=locallama, messages=[
         {
             'role': 'system',
@@ -135,17 +113,11 @@ Answer the user's next question using the context and information already provid
     follow_up_ans = response['message']['content']
     print("Follow-up response:", follow_up_ans)  # Debug print
 
-    # Add the follow-up conversation to memory
     chat_memory.add_conversation(follow_up_question, follow_up_ans)
 
-    # Generate text-to-speech
-    tts_response = text_to_speech(follow_up_ans)
+    tts_response = generate_speech(follow_up_ans)
 
-    return jsonify({
-        'follow_up_question': f"You asked: {follow_up_question}",
-        'follow_up_response': follow_up_ans,
-        "audio": tts_response["output_file_url"]
-    }), 200
+    return send_file(tts_response, as_attachment=False)
 
 @app.route('/clear-history', methods=['POST'])
 def clear_history():
@@ -154,5 +126,3 @@ def clear_history():
 
 if __name__ == "__main__":
     app.run()
-
-

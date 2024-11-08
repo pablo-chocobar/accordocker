@@ -3,22 +3,22 @@ from PIL import Image
 import concurrent.futures
 import ollama
 from transformers import AutoProcessor, AutoModelForCausalLM
+import TTS.api as TTS
 import warnings, requests
 warnings.filterwarnings("ignore")
-
-# Initialize conversation history
-conversation_history = []
 
 def initialize_models():
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
 
+    tts = TTS(model_name= 'tts_models/multilingual/multi-dataset/xtts_v2').to(device)
+
     model = AutoModelForCausalLM.from_pretrained("microsoft/Florence-2-large", torch_dtype=torch_dtype, trust_remote_code=True).to(device)
     processor = AutoProcessor.from_pretrained("microsoft/Florence-2-large", trust_remote_code=True)
     
-    return model, processor, device, torch_dtype
+    return model, processor, device, torch_dtype ,tts
 
-model, processor, device, torch_dtype = initialize_models()
+model, processor, device, torch_dtype, tts = initialize_models()
 locallama = "llama3.1"
 
 def parse_and_process_image(file):
@@ -73,7 +73,6 @@ def parallel_image_tasks(image, model, processor, device, torch_dtype):
     return ans1, ans2
 
 def main_workflow(image):
-    global conversation_history
 
     # task = classify_task(question)
     task = "1"
@@ -84,37 +83,9 @@ def main_workflow(image):
 
     return None
 
-def ask_follow_up(question):
-    global conversation_history
-
-    # Combine conversation history for context in follow-up
-    history_context = "\n".join([f"User: {conv['user']}\nSystem: {conv['system']}" for conv in conversation_history])
-
-    response = ollama.chat(model=locallama, messages=[
-        {
-            'role': 'system',
-            'content': f'''
-You are an AI assistant continuing the conversation with a visually impaired person. Here is the conversation so far:
-
-{history_context}
-
-Answer the user's next question using the context and information already provided.'''},
-        {
-            'role': 'user',
-            'content': 'Hey Shreeram, ' + question
-        }
-    ])
-
-    text_res = response['message']['content']
-    print(text_res)
-
-    # Append follow-up question and answer to the conversation history
-    conversation_history.append({
-        'user': question,
-        'system': text_res
-    })
-
-    return text_res
+def generate_speech(text):
+    tts.tts_to_file(text=text, file_path="./output.wav", language = "en")
+    return "./output.wav"
 
 
 def text_to_speech(text):

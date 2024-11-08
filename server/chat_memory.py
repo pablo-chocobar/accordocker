@@ -1,4 +1,3 @@
-# chat_memory.py
 class ChatMemory:
     def __init__(self):
         self.conversations = []
