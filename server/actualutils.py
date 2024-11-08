@@ -1,7 +1,7 @@
 import torch
 from PIL import Image
 from transformers import AutoProcessor, AutoModelForCausalLM
-import TTS.api as TTS # Coqui TTS
+from TTS.api import TTS # Coqui TTS
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -54,5 +54,5 @@ def main_workflow(image):
     return None
 
 def generate_speech(text):
-    tts.tts_to_file(text=text, file_path="./output.wav", language = "en")
+    tts.tts_to_file(text=text, file_path="./output.wav", language = "en", speaker = "Dionisio Schuyler")
     return "./output.wav"

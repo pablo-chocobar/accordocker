@@ -5,7 +5,6 @@ import warnings
 from chat_memory import ChatMemory
 
 warnings.filterwarnings("ignore")
-OUTPUT_DIR = '/home/accord/alltalk_tts/outputs/'
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here'

@@ -3,9 +3,17 @@ LABEL maintainer="Hugging Face"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-RUN apt update
-RUN apt install -y git libsndfile1-dev tesseract-ocr espeak-ng python3 python3-pip ffmpeg
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    git \
+    espeak-ng \
+    libsndfile1 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y libsndfile1-dev tesseract-ocr espeak-ng python3.11 python3-pip ffmpeg
 RUN python3 -m pip install --no-cache-dir --upgrade pip
+
 
 ARG REF=main
 RUN git clone https://github.com/huggingface/transformers && cd transformers && git checkout $REF
@@ -36,7 +44,16 @@ RUN cd transformers && python3 setup.py develop
 
 RUN cd ..
 
-WORKDIR /server
+WORKDIR /app
+
+COPY requirements.txt .
+RUN python3 -m pip install Cython==0.29.36 
+RUN python3 -m pip install --no-cache-dir spacy==3.0.7
+
+RUN python3 -m pip install --no-cache-dir -r requirements.txt
+
+COPY . .
 
 EXPOSE 5000
-CMD ["python", "temp.py"]
+
+CMD ["python3", "temp.py"]
