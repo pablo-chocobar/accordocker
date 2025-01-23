@@ -3,7 +3,8 @@ from flask_cors import CORS
 from actualutils import parse_and_process_image, main_workflow , generate_speech
 import warnings
 from chat_memory import ChatMemory
-
+import os
+os.environ["TRANSFORMERS_CACHE"] = "./models"
 warnings.filterwarnings("ignore")
 
 app = Flask(__name__)
@@ -104,7 +105,7 @@ Answer the user's next question using the context and information already provid
         },
         {
             'role': 'user',
-            'content': f'Hey Shreeram, {follow_up_question}'
+            'content': f'Hey, {follow_up_question}'
         }
     ])
     
