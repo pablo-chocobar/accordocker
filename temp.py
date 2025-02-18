@@ -138,7 +138,11 @@ def ocr_endpoint():
     try:
         image = parse_and_process_image(file)
         ocr_result = main_workflow(image, "2")
-        return jsonify({'text': ocr_result})
+        text = ocr_result["<OCR>"]
+        print("OCR result:", text)  # Debug print
+        tts_response = generate_speech(text)
+    
+        return send_file(tts_response, as_attachment=False)
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
