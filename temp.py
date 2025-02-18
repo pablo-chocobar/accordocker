@@ -12,7 +12,7 @@ app.config['SECRET_KEY'] = 'your-secret-key-here'
 CORS(app)
 
 chat_memory = ChatMemory()
-locallama = "llama3.1"
+locallama = "qwen2:0.5b"
 
 import ollama
 
@@ -122,6 +122,25 @@ Answer the user's next question using the context and information already provid
 def clear_history():
     chat_memory.clear_history()
     return jsonify({'message': 'Conversation history cleared'}), 200
+
+@app.route('/ocr', methods=['POST'])
+def ocr_endpoint():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+        
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+        
+    if not file.filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+        return jsonify({'error': 'Invalid file type'}), 400
+        
+    try:
+        image = parse_and_process_image(file)
+        ocr_result = main_workflow(image, "2")
+        return jsonify({'text': ocr_result})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

@@ -43,11 +43,14 @@ def image_task(prompt, image, model, processor, device, torch_dtype):
 
     return parsed_answer
 
-def main_workflow(image):
+def main_workflow(image, task = "1"):
 
-    task = "1"
     if task == "1":
         prompt = "<MORE_DETAILED_CAPTION>"
+        result = image_task(prompt, image, model, processor, device, torch_dtype)
+        return result
+    elif task == "2":
+        prompt = "<OCR>"
         result = image_task(prompt, image, model, processor, device, torch_dtype)
         return result
 
