@@ -12,7 +12,7 @@ app.config['SECRET_KEY'] = 'your-secret-key-here'
 CORS(app)
 
 chat_memory = ChatMemory()
-locallama = "qwen2:0.5b"
+locallama = "qwen2.5:7b"
 
 import ollama
 
